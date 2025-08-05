@@ -1,4 +1,4 @@
-- name: Configuring Catalogue component
+- name: configure catalogue component
   hosts: catalogue
   become: yes
   tasks:
@@ -9,13 +9,13 @@
     ansible.builtin.command: dnf module enable nodejs:20 -y
 
   - name: Install nodejs
-    ansible.builtin.dnf: 
-      name: nginx
+    ansible.builtin.dnf:
+      name: nodejs
       state: present
-
+      
   - name: create app directory
     ansible.builtin.file:
-      name: /app
+      path: /app
       state: directory
 
   - name: create roboshop system user
@@ -23,16 +23,16 @@
       name: roboshop
       shell: /sbin/nologin
       system: true
-      home: /app #home directory 
+      home: /app
 
   - name: download catalogue code
     ansible.builtin.get_url:
       url: https://roboshop-artifacts.s3.amazonaws.com/catalogue-v3.zip 
-      dest: /tmp/catalogue.zip         
+      dest: /tmp/catalogue.zip
 
   # this module thinks file exist on ansible control server, needs to extract on to remote machine
-  # remote_src: yes --> means files already exist in catalogue server
-  - name: extract (unzip) the catalogue code
+  # remote_src: yes means files already exist in catalogue server
+  - name: extract catalogue code
     ansible.builtin.unarchive:
       src: /tmp/catalogue.zip
       dest: /app
@@ -40,12 +40,12 @@
 
   - name: install dependencies
     community.general.npm:
-      path: /app     
+      path: /app
 
-  - name: copy catalogue service to system directory  
+  - name: copy catalogue service to system directory
     ansible.builtin.copy:
       src: catalogue.service
-      dest: /etc/systemd/service/catalogue.service 
+      dest: /etc/systemd/system/catalogue.service
 
   - name: systemctl deamon reload
     ansible.builtin.systemd_service:
@@ -60,7 +60,7 @@
   - name: copy mongodb repo
     ansible.builtin.copy:
       src: mongo.repo
-      dest: /etc/yum.repos.d/mongo.repo     
+      dest: /etc/yum.repos.d/mongo.repo
 
   - name: install mongodb client
     ansible.builtin.dnf:
@@ -77,4 +77,5 @@
 
   - name: load products
     ansible.builtin.shell: mongosh --host mongodb.catalogue.devopslearning.store < /app/db/master-data.js
-    when: catalogue_output.stdout | int < 0    
+    when: catalogue_output.stdout | int < 0
+  
