@@ -1,4 +1,4 @@
-- name: conigure payment server
+- name: configure payment server
   become: yes
   hosts: payment
   tasks:
